@@ -7,13 +7,34 @@ public class HapticsController : MonoBehaviour
     public Camera _camera;
     public Transform _cursorControl;
     public Transform _cursorDisplay;
-    public Image _image;
 
     // Start is called before the first frame update
     void Start()
     {
         _camera = GetComponent<Camera>();
         Cursor.visible = false;
+    }
+
+    float GetGrayScale(Vector3 pos) {
+        // from https://docs.unity3d.com/ScriptReference/RaycastHit-textureCoord.html
+        RaycastHit hit;
+        if (!Physics.Raycast(_camera.ScreenPointToRay(pos), out hit))
+            return 0;
+
+        Renderer rend = hit.transform.GetComponent<Renderer>();
+        MeshCollider meshCollider = hit.collider as MeshCollider;
+
+        if (rend == null || rend.sharedMaterial == null || rend.sharedMaterial.mainTexture == null || meshCollider == null)
+            return 0;
+
+        Texture2D tex = rend.material.mainTexture as Texture2D;
+        Vector2 pixelUV = hit.textureCoord;
+        pixelUV.x *= tex.width;
+        pixelUV.y *= tex.height;
+
+        Color color = tex.GetPixel((int)pixelUV.x, (int)pixelUV.y);
+        float grayscale = color.grayscale;
+        return grayscale;
     }
 
     // Update is called once per frame
@@ -23,11 +44,8 @@ public class HapticsController : MonoBehaviour
         pos.z = 0.85f;
         Vector3 target = _camera.ScreenToWorldPoint(pos);
 
-        int x = Mathf.FloorToInt(transform.position.x / size.x * heightmap.width);
-        int z = Mathf.FloorToInt(transform.position.z / size.z * heightmap.height);
-        Vector3 pos = transform.position;
-        pos.y = heightmap.GetPixel(x, z).grayscale * size.y;
-        transform.position = pos;
+        float grayscale = GetGrayScale(pos);
+        Debug.Log(grayscale);
 
         _cursorControl.transform.position = _camera.ScreenToWorldPoint(pos);
         _cursorDisplay.transform.position = _cursorControl.transform.position;
