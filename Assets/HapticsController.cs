@@ -47,7 +47,15 @@ public class HapticsController : MonoBehaviour
         float grayscale = GetGrayScale(pos);
         Debug.Log(grayscale);
 
-        _cursorControl.transform.position = _camera.ScreenToWorldPoint(pos);
-        _cursorDisplay.transform.position = _cursorControl.transform.position;
+        _cursorDisplay.transform.position = target;
+
+        if (grayscale == 0){
+            _cursorControl.transform.position = target;
+        } else {
+            _cursorControl.transform.position = target * (1 - grayscale);
+        }
+
+        
+        
     }
 }
