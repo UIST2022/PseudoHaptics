@@ -7,12 +7,15 @@ public class HapticsController : MonoBehaviour
     public Camera _camera;
     public Transform _cursorControl;
     public Transform _cursorDisplay;
+    public Transform _prevCursorControl;
+    public float cd_factor_slope = 1.7f;
 
     // Start is called before the first frame update
     void Start()
     {
         _camera = GetComponent<Camera>();
         Cursor.visible = false;
+        _prevCursorControl = _cursorControl;
     }
 
     float GetGrayScale(Vector3 pos) {
@@ -44,18 +47,18 @@ public class HapticsController : MonoBehaviour
         pos.z = 0.85f;
         Vector3 target = _camera.ScreenToWorldPoint(pos);
 
-        float grayscale = GetGrayScale(pos);
-        Debug.Log(grayscale);
+        Vector3 display_pos = _camera.WorldToScreenPoint(new Vector3(_cursorDisplay.position.x, _cursorDisplay.position.y, 0.85f));
+        float grayscale = GetGrayScale(display_pos);
+        Vector3 displacement = target - _prevCursorControl.position;
+        _cursorControl.transform.position = target;
 
-        _cursorDisplay.transform.position = target;
+        // assuming sigmoidal C/D curve
+        float cd_factor = 2f / (1f + Mathf.Exp(cd_factor_slope * (grayscale - 0.5f)));
+        _cursorDisplay.transform.position += displacement * cd_factor;
 
-        if (grayscale == 0){
-            _cursorControl.transform.position = target;
-        } else {
-            _cursorControl.transform.position = target * (1 - grayscale);
-        }
+        _prevCursorControl = _cursorControl;
 
-        
-        
+        Debug.Log("display: " + display_pos + ", control: " + pos + ", grayscale: " + grayscale + ", cd_factor: " + cd_factor);
+
     }
 }
